@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import * as React from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { FormCard } from '@/components/form-shell';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,12 @@ export function LoginForm({ next }: { next?: string }) {
         <Button className="w-full h-11" disabled={loading} type="submit">
           {loading ? 'Signing in...' : 'Sign in'}
         </Button>
+        <div className="text-center text-sm text-muted-foreground">
+          Need an account?{" "}
+          <Link href="/register" className="text-primary underline underline-offset-4">
+            Create one
+          </Link>
+        </div>
       </form>
     </FormCard>
   );

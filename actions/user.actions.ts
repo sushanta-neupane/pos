@@ -101,4 +101,44 @@ export async function adminDeleteUser(input: z.infer<typeof deleteUserSchema>) {
   return { ok: true };
 }
 
-// Self-registration intentionally disabled for POS deployments.
+const publicRegisterSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  name: z.string().trim().min(1).optional(),
+});
+
+function allowPublicRegister() {
+  const flag = (process.env.ALLOW_REGISTER ?? "").toLowerCase();
+  if (flag === "true" || flag === "1" || flag === "yes") return true;
+  if (flag === "false" || flag === "0" || flag === "no") return false;
+  return process.env.NODE_ENV !== "production";
+}
+
+export async function publicRegisterUser(
+  input: z.infer<typeof publicRegisterSchema>,
+) {
+  if (!allowPublicRegister()) {
+    throw new Error("Registration is disabled");
+  }
+
+  const data = publicRegisterSchema.parse(input);
+  const email = data.email.toLowerCase().trim();
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) throw new Error("Email already exists");
+
+  const count = await prisma.user.count();
+  const role: "ADMIN" | "SALES" = count === 0 ? "ADMIN" : "SALES";
+
+  const passwordHash = await bcrypt.hash(data.password, 10);
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      role,
+      name: data.name ?? null,
+    },
+  });
+
+  return { id: user.id, email: user.email, role: user.role, name: user.name };
+}

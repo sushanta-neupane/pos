@@ -19,14 +19,14 @@ export async function proxy(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
   if (!token) {
-    if (pathname === "/login") return NextResponse.next();
+    if (pathname === "/login" || pathname === "/register") return NextResponse.next();
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/register") {
     const url = req.nextUrl.clone();
     url.pathname = token.role === "ADMIN" ? "/dashboard" : "/pos";
     url.search = "";
