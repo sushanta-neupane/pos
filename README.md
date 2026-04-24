@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Inventory Management + POS (Next.js + Prisma + MongoDB)
 
-## Getting Started
+Minimal, keyboard-friendly ERP/POS-style app with:
+- Next.js (App Router)
+- Prisma ORM + MongoDB
+- Tailwind CSS + shadcn/ui
+- NextAuth (Credentials) with roles: `ADMIN` / `SALES`
 
-First, run the development server:
+## Setup
 
+1) Create env file:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run setup
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Start MongoDB locally (default in `.env.example`):
+Prisma + MongoDB requires a replica set (single-node is fine).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Local mongod (no Docker):
+```bash
+mkdir -p .mongo-data-rs0
+mongod --dbpath .mongo-data-rs0 --replSet rs0 --bind_ip 127.0.0.1 --port 27018 --logpath .mongo-data-rs0/mongod.log
+mongosh --quiet "mongodb://127.0.0.1:27018/admin" --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27018"}]})'
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Or Docker (if installed):
+```bash
+docker compose up -d
+```
 
-## Learn More
+3) Push schema + seed an admin:
+```bash
+npm run db:push
+npm run db:seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+4) Run:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Login:
+- `admin@local.test` / `admin123`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Notes
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Admin-only routes: `/dashboard`, `/alerts`
+- Email alerts: set SMTP env vars in `.env` (see `.env.example`)

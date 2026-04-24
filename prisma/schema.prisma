@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SALES
+}
+
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         Role     @default(SALES)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@index([role])
+}
+
+model Product {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  name                String
+  barcode             String    @unique
+  priceCents          Int
+  costCents           Int
+  stock               Int       @default(0)
+  isTrending          Boolean   @default(false)
+  lowStockThreshold   Int       @default(5)
+  lastLowStockAlertAt DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  transactionItems TransactionItem[]
+
+  @@index([name])
+  @@index([isTrending])
+}
+
+model Transaction {
+  id            String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String?           @db.ObjectId
+  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items         TransactionItem[]
+  discountCents Int               @default(0)
+  subtotalCents Int
+  totalCents    Int
+  profitCents   Int
+  createdAt     DateTime          @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model TransactionItem {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  transactionId String      @db.ObjectId
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     String?     @db.ObjectId
+  product       Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  name        String
+  barcode     String
+  quantity    Int
+  priceCents  Int
+  costCents   Int
+  discountCents Int @default(0)
+  totalCents  Int
+  profitCents Int
+
+  @@index([transactionId])
+  @@index([productId])
+  @@index([barcode])
+}

@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+.mongo-data
+.mongo-data-rs0
 
 # debug
 npm-debug.log*
