@@ -4,9 +4,9 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import * as React from 'react';
 import { toast } from 'sonner';
+import { FormCard } from '@/components/form-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FormCard } from '@/components/form-shell';
 
 export function LoginForm({ next }: { next?: string }) {
   const router = useRouter();
@@ -67,9 +67,6 @@ export function LoginForm({ next }: { next?: string }) {
         <Button className="w-full h-11" disabled={loading} type="submit">
           {loading ? 'Signing in...' : 'Sign in'}
         </Button>
-        <div className="text-xs text-muted-foreground">
-          Seeded default: admin@local.test / admin123
-        </div>
       </form>
     </FormCard>
   );
