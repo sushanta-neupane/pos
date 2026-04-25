@@ -24,11 +24,7 @@ export default function StockPage() {
 
   React.useEffect(() => {
     const q = query.trim();
-    if (!q) {
-      setResults([]);
-      setSearchLoading(false);
-      return;
-    }
+    if (!q) return;
 
     const t = window.setTimeout(async () => {
       setSearchLoading(true);
@@ -90,7 +86,14 @@ export default function StockPage() {
             <div className="text-sm font-medium">Search product</div>
             <Input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setQuery(v);
+                if (!v.trim()) {
+                  setResults([]);
+                  setSearchLoading(false);
+                }
+              }}
               placeholder="Search by name or barcode"
               className="h-11 rounded-md"
             />

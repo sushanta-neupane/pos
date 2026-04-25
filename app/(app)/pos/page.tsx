@@ -23,6 +23,7 @@ type CartItem = {
   name: string;
   priceCents: number;
   costCents: number;
+  stock: number;
   quantity: number;
   discountCents: number;
 };
@@ -90,6 +91,14 @@ export default function POSPage() {
 
     const existing = cart.find((c) => c.barcode === trimmed);
     if (existing) {
+      if (existing.stock <= 0) {
+        toast.error("Out of stock");
+        return;
+      }
+      if (existing.quantity + 1 > existing.stock) {
+        toast.error(`Only ${existing.stock} in stock`);
+        return;
+      }
       setCart((prev) =>
         prev.map((c) => (c.barcode === trimmed ? { ...c, quantity: c.quantity + 1 } : c))
       );
@@ -101,13 +110,28 @@ export default function POSPage() {
       toast.error("Product not found");
       return;
     }
+    const p = product.product;
+    const variantLabel = product.variant
+      ? [product.variant.size, product.variant.colorName ?? product.variant.colorHex]
+          .filter(Boolean)
+          .join(" / ")
+      : "";
+    const displayName = variantLabel ? `${p.name} (${variantLabel})` : p.name;
+    const priceCents = product.variant ? product.variant.priceCents : p.priceCents;
+    const stockValue = product.variant ? product.variant.stock : p.stock;
+
+    if (stockValue <= 0) {
+      toast.error("Out of stock");
+      return;
+    }
     setCart((prev) => [
       ...prev,
       {
-        barcode: product.barcode,
-        name: product.name,
-        priceCents: product.priceCents,
-        costCents: product.costCents,
+        barcode: trimmed,
+        name: displayName,
+        priceCents,
+        costCents: p.costCents,
+        stock: stockValue,
         quantity: 1,
         discountCents: 0,
       },
@@ -210,6 +234,10 @@ export default function POSPage() {
               e.preventDefault();
               const picked = results[selectedIndex];
               if (!picked) return;
+              if (picked.stock <= 0) {
+                toast.error("Out of stock");
+                return;
+              }
               addByBarcode(picked.barcode)
                 .then(() => {
                   setQ("");
@@ -241,6 +269,10 @@ export default function POSPage() {
                       ].join(" ")}
                       onMouseEnter={() => setSelectedIndex(idx)}
                       onClick={() => {
+                        if (r.stock <= 0) {
+                          toast.error("Out of stock");
+                          return;
+                        }
                         addByBarcode(r.barcode)
                           .then(() => {
                             setQ("");
@@ -290,35 +322,40 @@ export default function POSPage() {
           </TableHeader>
           <TableBody>
             {cart.map((item) => (
-              <TableRow key={item.barcode}>
-                <TableCell>
-                  <div className="font-medium">{item.name}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{item.barcode}</div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="inline-flex items-center gap-1">
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() =>
-                        setCart((prev) =>
-                          prev
-                            .map((c) =>
-                              c.barcode === item.barcode
-                                ? { ...c, quantity: Math.max(1, c.quantity - 1) }
-                                : c
-                            )
-                            .filter((c) => c.quantity > 0)
-                        )
-                      }
-                      type="button"
-                    >
-                      -
-                    </Button>
+                <TableRow key={item.barcode}>
+                  <TableCell>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{item.barcode}</div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">
+                      In stock: {item.stock}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="inline-flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() =>
+                          setCart((prev) =>
+                            prev
+                              .map((c) =>
+                                c.barcode === item.barcode
+                                  ? { ...c, quantity: Math.max(1, c.quantity - 1) }
+                                  : c
+                              )
+                              .filter((c) => c.quantity > 0)
+                          )
+                        }
+                        type="button"
+                      >
+                        -
+                      </Button>
                     <Input
                       value={String(item.quantity)}
                       onChange={(e) => {
-                        const n = Math.max(1, Number(e.target.value) || 1);
+                        const raw = Number(e.target.value) || 1;
+                        const n = Math.max(1, Math.min(item.stock || 1, raw));
+                        if (raw > item.stock) toast.error(`Only ${item.stock} in stock`);
                         setCart((prev) =>
                           prev.map((c) => (c.barcode === item.barcode ? { ...c, quantity: n } : c))
                         );
@@ -328,12 +365,19 @@ export default function POSPage() {
                     <Button
                       size="icon"
                       variant="outline"
+                      disabled={item.quantity >= item.stock}
                       onClick={() =>
-                        setCart((prev) =>
-                          prev.map((c) =>
+                        setCart((prev) => {
+                          const current = prev.find((c) => c.barcode === item.barcode);
+                          if (!current) return prev;
+                          if (current.quantity + 1 > current.stock) {
+                            toast.error(`Only ${current.stock} in stock`);
+                            return prev;
+                          }
+                          return prev.map((c) =>
                             c.barcode === item.barcode ? { ...c, quantity: c.quantity + 1 } : c
-                          )
-                        )
+                          );
+                        })
                       }
                       type="button"
                     >

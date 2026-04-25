@@ -11,7 +11,7 @@ export function PageTitle({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <div className="text-2xl font-semibold tracking-tight text-primary">
           {title}
@@ -20,7 +20,7 @@ export function PageTitle({
           <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div>
         ) : null}
       </div>
-      {right ? <div className="pt-1">{right}</div> : null}
+      {right ? <div className="pt-1 sm:shrink-0">{right}</div> : null}
     </div>
   );
 }
@@ -39,14 +39,16 @@ export function FormCard({
   return (
     <div className={cn("rounded-2xl border bg-background", className)}>
       {title ? (
-        <div className="px-8 pt-8 text-center">
+        <div className="px-4 pt-6 text-center sm:px-8 sm:pt-8">
           <div className="text-lg font-semibold tracking-tight text-primary">{title}</div>
           {description ? (
             <div className="mt-1 text-sm text-muted-foreground">{description}</div>
           ) : null}
         </div>
       ) : null}
-      <div className={cn("px-8 pb-8", title ? "pt-6" : "pt-8")}>{children}</div>
+      <div className={cn("px-4 pb-6 sm:px-8 sm:pb-8", title ? "pt-4 sm:pt-6" : "pt-6 sm:pt-8")}>
+        {children}
+      </div>
     </div>
   );
 }

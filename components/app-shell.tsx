@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 type NavItem = { href: string; label: string; adminOnly?: boolean };
 
@@ -131,6 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const role = data?.user?.role;
 
   const [q, setQ] = React.useState("");
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 
   function onSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -141,8 +143,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <div className="w-full">
-        <div className="grid min-h-screen grid-cols-[260px_1fr]">
-          <aside className="border-r bg-muted/30">
+        <div className="grid min-h-screen grid-cols-1 md:grid-cols-[260px_1fr]">
+          <aside className="hidden md:block border-r bg-muted/30">
             <div className="h-14 px-4 flex items-center gap-2 border-b bg-background">
               <div className="h-9 w-9 rounded-full border grid place-items-center bg-background">
                 <div className="h-5 w-5 rounded-full bg-foreground" />
@@ -217,19 +219,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
 
           <div className="bg-[hsl(210_40%_98%)]">
-            <header className="sticky top-0 z-10 h-14 border-b bg-[hsl(210_40%_98%)] px-5 flex items-center justify-between gap-4">
-              <div className="text-lg font-semibold tracking-tight text-primary">
-                {pathname.startsWith("/dashboard")
-                  ? "Dashboard"
-                  : pathname.startsWith("/products")
-                  ? "Products"
-                  : pathname.startsWith("/stock")
-                  ? "Add Stock"
-                  : pathname.startsWith("/pos")
-                  ? "POS"
-                  : pathname.startsWith("/alerts")
-                  ? "Alerts"
-                  : "Inventory"}
+            <header className="sticky top-0 z-10 h-14 border-b bg-[hsl(210_40%_98%)] px-4 sm:px-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 md:hidden"
+                  onClick={() => setMobileNavOpen(true)}
+                  aria-label="Open menu"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </Button>
+
+                <div className="text-lg font-semibold tracking-tight text-primary truncate">
+                  {pathname.startsWith("/dashboard")
+                    ? "Dashboard"
+                    : pathname.startsWith("/products")
+                    ? "Products"
+                    : pathname.startsWith("/stock")
+                    ? "Add Stock"
+                    : pathname.startsWith("/pos")
+                    ? "POS"
+                    : pathname.startsWith("/alerts")
+                    ? "Alerts"
+                    : "Inventory"}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -298,10 +315,84 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </header>
 
-            <main className="p-5">{children}</main>
+            <main className="p-4 sm:p-5">{children}</main>
           </div>
         </div>
       </div>
+
+      <Dialog open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <DialogContent className="fixed left-0 top-0 bottom-0 z-50 w-[86%] max-w-sm translate-x-0 translate-y-0 rounded-none border-r p-0">
+          <div className="h-14 px-4 flex items-center gap-2 border-b bg-background">
+            <button
+              type="button"
+              className="h-9 w-9 rounded-full border grid place-items-center bg-background"
+              onClick={() => setMobileNavOpen(false)}
+              aria-label="Close menu"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+            <div className="text-sm font-semibold tracking-tight">D-inventy</div>
+          </div>
+          <nav className="p-3 space-y-1">
+            {NAV.filter((i) => !i.adminOnly || role === "ADMIN").map((item) => {
+              const active = pathname === item.href || pathname.startsWith(item.href + "/");
+              const iconName = navIcon(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileNavOpen(false)}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-sm border border-transparent px-3 py-2 text-sm hover:bg-background/70",
+                    active && "bg-primary text-primary-foreground hover:bg-primary/90"
+                  )}
+                >
+                  <Icon
+                    name={iconName}
+                    className={cn(
+                      active
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground group-hover:text-foreground/70"
+                    )}
+                  />
+                  <span className={cn("truncate", active && "font-medium")}>{item.label}</span>
+                </Link>
+              );
+            })}
+            {role === "ADMIN" ? (
+              <div className="pt-3 mt-3 border-t">
+                <Link
+                  href="/dashboard/users"
+                  onClick={() => setMobileNavOpen(false)}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-sm border border-transparent px-3 py-2 text-sm hover:bg-background/70",
+                    pathname.startsWith("/dashboard/users") &&
+                      "bg-primary text-primary-foreground hover:bg-primary/90"
+                  )}
+                >
+                  <svg
+                    className={cn(
+                      "h-4 w-4",
+                      pathname.startsWith("/dashboard/users")
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground group-hover:text-foreground/70"
+                    )}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                  Users
+                </Link>
+              </div>
+            ) : null}
+          </nav>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

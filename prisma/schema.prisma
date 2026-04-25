@@ -40,9 +40,31 @@ model Product {
   updatedAt           DateTime  @updatedAt
 
   transactionItems TransactionItem[]
+  variants         ProductVariant[]
 
   @@index([name])
   @@index([isTrending])
+}
+
+model ProductVariant {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId String   @db.ObjectId
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  size   String?
+  colorName String?
+  colorHex  String?
+  key    String
+  barcode String @unique
+  priceCents Int @default(0)
+  costCents  Int? @default(0)
+  stock      Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@unique([productId, key])
 }
 
 model Transaction {

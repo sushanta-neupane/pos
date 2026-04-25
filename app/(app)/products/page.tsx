@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth/next";
-import { prisma } from "@/lib/prisma";
 import { formatCents } from "@/lib/money";
 import { authOptions } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Code39Barcode } from "@/components/barcode/code39";
 import { ProductRowActions } from "./product-row-actions";
+import { ProductBarcodeCell } from "./product-barcode-cell";
+import { prisma } from "@/lib/prisma";
 import {
   Table,
   TableBody,
@@ -20,25 +20,57 @@ export const dynamic = "force-dynamic";
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   await getServerSession(authOptions);
 
-  const { q } = await searchParams;
+  const { q, page: pageParam } = await searchParams;
   const query = (q ?? "").trim();
 
-  const products = await prisma.product.findMany({
-    where: query
-      ? {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { barcode: { contains: query, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
-    orderBy: { updatedAt: "desc" },
-    take: 200,
-  });
+  const page = Math.max(1, Number(pageParam) || 1);
+  const pageSize = 25;
+
+  const where = query
+    ? {
+        OR: [
+          { name: { contains: query, mode: "insensitive" as const } },
+          { barcode: { contains: query, mode: "insensitive" as const } },
+          { variants: { some: { barcode: { contains: query, mode: "insensitive" as const } } } },
+        ],
+      }
+    : undefined;
+
+  const [total, products] = await Promise.all([
+    prisma.product.count({ where }),
+    prisma.product.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        name: true,
+        barcode: true,
+        priceCents: true,
+        costCents: true,
+        stock: true,
+        isTrending: true,
+        lowStockThreshold: true,
+        variants: {
+          select: {
+            id: true,
+            size: true,
+            colorName: true,
+            colorHex: true,
+            key: true,
+            barcode: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="space-y-3">
@@ -75,23 +107,7 @@ export default async function ProductsPage({
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell>
-                    <div className="grid gap-1">
-                      <div className="overflow-hidden">
-                        <div className="origin-left scale-[0.7]">
-                          <Code39Barcode
-                            value={p.barcode}
-                            height={44}
-                            narrow={2}
-                            wide={5}
-                            quiet={10}
-                            title={p.barcode}
-                          />
-                        </div>
-                      </div>
-                      <div className="font-mono text-[11px] text-muted-foreground">
-                        {p.barcode}
-                      </div>
-                    </div>
+                    <ProductBarcodeCell barcode={p.barcode} variants={p.variants} />
                   </TableCell>
                   <TableCell className="text-right">{formatCents(p.priceCents)}</TableCell>
                   <TableCell className="text-right">{formatCents(p.costCents)}</TableCell>
@@ -115,6 +131,52 @@ export default async function ProductsPage({
             ) : null}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-between text-sm">
+        <div className="text-xs text-muted-foreground">
+          Page {page} of {totalPages} · {total} total
+        </div>
+        <div className="flex items-center gap-2">
+          {page <= 1 ? (
+            <Button variant="outline" disabled>
+              Prev
+            </Button>
+          ) : (
+            <Button asChild variant="outline">
+              <Link
+                href={{
+                  pathname: "/products",
+                  query: {
+                    ...(query ? { q: query } : {}),
+                    page: String(Math.max(1, page - 1)),
+                  },
+                }}
+              >
+                Prev
+              </Link>
+            </Button>
+          )}
+          {page >= totalPages ? (
+            <Button variant="outline" disabled>
+              Next
+            </Button>
+          ) : (
+            <Button asChild variant="outline">
+              <Link
+                href={{
+                  pathname: "/products",
+                  query: {
+                    ...(query ? { q: query } : {}),
+                    page: String(Math.min(totalPages, page + 1)),
+                  },
+                }}
+              >
+                Next
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
