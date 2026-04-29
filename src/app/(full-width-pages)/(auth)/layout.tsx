@@ -26,7 +26,7 @@ export default function AuthLayout({
 								</Link>
 								<p className="text-center text-gray-400 dark:text-white/60">
 									Manage your store inventory and sales with ease using our
-									intuitive POS system.
+									intuitive selling tools.
 								</p>
 							</div>
 						</div>

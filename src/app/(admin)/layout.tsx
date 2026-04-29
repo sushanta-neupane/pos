@@ -11,14 +11,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const { isMobileOpen } = useSidebar();
 
-  // Dynamic class for main content margin based on sidebar state
-  const mainContentMargin = isMobileOpen
-    ? "ml-0"
-    : isExpanded || isHovered
-    ? "lg:ml-[290px]"
-    : "lg:ml-[90px]";
+  const mainContentMargin = isMobileOpen ? "ml-0" : "lg:ml-[290px]";
 
   return (
     <div className="min-h-screen xl:flex">

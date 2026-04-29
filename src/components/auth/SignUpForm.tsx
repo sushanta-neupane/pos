@@ -45,7 +45,7 @@ export default function SignUpForm() {
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
         <div className="mb-5 sm:mb-8">
           <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Sign Up</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Create your staff account to access POS and inventory tools.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Create your staff account to access selling and inventory tools.</p>
         </div>
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

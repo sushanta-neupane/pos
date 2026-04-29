@@ -170,7 +170,7 @@ export default function POSPage() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm font-semibold">POS</div>
+          <div className="text-sm font-semibold">Sell</div>
           <div className="text-xs text-muted-foreground">
             Scan barcode → Enter → complete sale.
           </div>
@@ -180,7 +180,7 @@ export default function POSPage() {
         </Button>
       </div>
 
-      <FormCard title="POS checkout" description="Scan barcode, search items, and complete the sale from one place.">
+      <FormCard title="Sell items" description="Scan barcode, search items, and complete the sale from one place.">
         <form onSubmit={onBarcodeSubmit} className="flex items-center gap-2">
           <Input
             ref={barcodeRef}

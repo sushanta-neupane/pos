@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { ActivityItem } from "@/app/(admin)/dashboard/activities-card";
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -26,7 +27,11 @@ export async function getDashboardPageData() {
       aggregate: (args: unknown) => Promise<{ _sum: { quantity: number | null } }>;
       findMany: (args: unknown) => Promise<
         Array<{
+          id: string;
+          name: string;
+          barcode: string;
           quantity: number;
+          costCents: number;
           totalCostCents: number;
           createdAt: Date;
         }>
@@ -45,10 +50,13 @@ export async function getDashboardPageData() {
           id: true,
           name: true,
           barcode: true,
+          priceCents: true,
           stock: true,
           lowStockThreshold: true,
           costCents: true,
           isTrending: true,
+          createdAt: true,
+          updatedAt: true,
           variants: {
             select: {
               id: true,
@@ -91,7 +99,15 @@ export async function getDashboardPageData() {
         ? stockEntry.stockEntry.findMany({
             where: { createdAt: { gte: yearlyStart } },
             orderBy: { createdAt: "desc" },
-            select: { quantity: true, totalCostCents: true, createdAt: true },
+            select: {
+              id: true,
+              name: true,
+              barcode: true,
+              quantity: true,
+              costCents: true,
+              totalCostCents: true,
+              createdAt: true,
+            },
           })
         : Promise.resolve([]),
     ]);
@@ -107,4 +123,53 @@ export async function getDashboardPageData() {
     stockAgg,
     stockEntries,
   };
+}
+
+export function buildDashboardActivities(data: Awaited<ReturnType<typeof getDashboardPageData>>): ActivityItem[] {
+  const activities = [
+    ...data.products.map((product) => ({
+      id: `product-created-${product.id}`,
+      type: "add-product" as const,
+      label: "Add Product",
+      name: product.name,
+      details: `Created with code ${product.barcode}`,
+      createdAt: product.createdAt.toISOString(),
+      amount: product.costCents,
+    })),
+    ...data.products
+      .filter((product) => product.updatedAt.getTime() > product.createdAt.getTime())
+      .map((product) => ({
+        id: `product-updated-${product.id}`,
+        type: "update-product" as const,
+        label: "Update Product",
+        name: product.name,
+        details: `Latest stock ${product.stock}`,
+        createdAt: product.updatedAt.toISOString(),
+        amount: product.priceCents,
+      })),
+    ...data.stockEntries.map((entry) => ({
+      id: `stock-entry-${entry.id}`,
+      type: "add-stock" as const,
+      label: "Add Stock",
+      name: entry.name,
+      details: `${entry.quantity} item(s) added to stock`,
+      createdAt: entry.createdAt.toISOString(),
+      amount: entry.totalCostCents,
+    })),
+    ...data.transactions.map((transaction) => ({
+      id: `sale-${transaction.id}`,
+      type: "sell-product" as const,
+      label: "Sell Product",
+      name: transaction.items[0]?.name ?? "Sale",
+      details: `${transaction.items.reduce((sum, item) => sum + item.quantity, 0)} item(s) sold by ${transaction.user?.name || "Unknown"}`,
+      createdAt: transaction.createdAt.toISOString(),
+      amount: transaction.totalCents,
+    })),
+  ];
+
+  return activities
+    .sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+    .slice(0, 12);
 }

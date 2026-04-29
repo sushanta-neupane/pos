@@ -26,7 +26,7 @@ export default function UserDropdown() {
             <DropdownItem onItemClick={() => setIsOpen(false)} tag="a" href="/dashboard" className="flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-gray-700 text-theme-sm hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">Dashboard</DropdownItem>
           </li>
           <li>
-            <DropdownItem onItemClick={() => setIsOpen(false)} tag="a" href="/pos" className="flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-gray-700 text-theme-sm hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">POS</DropdownItem>
+            <DropdownItem onItemClick={() => setIsOpen(false)} tag="a" href="/pos" className="flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-gray-700 text-theme-sm hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">Sell</DropdownItem>
           </li>
         </ul>
         <button onClick={() => signOut({ callbackUrl: "/signin" })} className="mt-3 flex items-center gap-3 rounded-lg px-3 py-2 text-left font-medium text-gray-700 text-theme-sm hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">Sign out</button>
